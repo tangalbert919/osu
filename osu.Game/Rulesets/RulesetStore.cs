@@ -22,9 +22,16 @@ namespace osu.Game.Rulesets
         {
             AppDomain.CurrentDomain.AssemblyResolve += currentDomain_AssemblyResolve;
 
-            foreach (string file in Directory.GetFiles(Environment.CurrentDirectory, $"{ruleset_library_prefix}.*.dll")
-                                             .Where(f => !Path.GetFileName(f).Contains("Tests")))
-                loadRulesetFromFile(file);
+            try
+            {
+                foreach (string file in Directory.GetFiles(Environment.CurrentDirectory, $"{ruleset_library_prefix}.*.dll")
+                                                     .Where(f => !Path.GetFileName(f).Contains("Tests")))
+                    loadRulesetFromFile(file);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Failed to load rulesets from current directory");
+            }
         }
 
         public RulesetStore(IDatabaseContextFactory factory)
@@ -126,6 +133,19 @@ namespace osu.Game.Rulesets
             catch (Exception e)
             {
                 Logger.Error(e, $"Failed to load ruleset {filename}");
+            }
+        }
+
+        public static void LoadRulesetFromType(Func<Type> funcType, string loggingName)
+        {
+            try
+            {
+                var type = funcType();
+                loaded_assemblies[type.Assembly] = type;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, $"Failed to load ruleset {loggingName}");
             }
         }
     }
